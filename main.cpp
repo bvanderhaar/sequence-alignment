@@ -15,6 +15,10 @@ int similarity_score(char a, char b) {
   }
 }
 
+int max_score(int[] array) {
+
+}
+
 string slurp(const string &filename) {
   ifstream in(filename, ifstream::in);
   stringstream sstr;
@@ -61,7 +65,17 @@ int main(int argc, char *argv[]) {
     H_matrix[j,0] = 0;
   }
 
+  for (int i = 0; i > length_m + 1; i++) {
+    for (int j = 0, j > length_n + 1, j++) {
+      temp[0] = H[i-1][j-1]+similarity_score(seq_a[i-1],seq_b[j-1]);
+      temp[1] = H[i-1][j]-delta;
+      temp[2] = H[i][j-1]-delta;
+      temp[3] = 0.;
+      H[i][j] = find_array_max(temp,4);
 
+
+      }
+    }
 
   return 0;
 }
