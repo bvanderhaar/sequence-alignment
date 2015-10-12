@@ -61,7 +61,7 @@ void *process_matrix_thread(void *threadarg) {
   max_options[1] = H_matrix[*(matrix->i) - 1][*(matrix->j)] - GAP_PENALTY;
   max_options[2] = H_matrix[*(matrix->i)][*(matrix->j) - 1] - GAP_PENALTY;
   H_matrix[*(matrix->i)][*(matrix->j)] = max_score(max_options);
-  //this is inefficient and should be fixed
+  // this is inefficient and should be fixed
   (*matrix->H_matrix) = H_matrix;
   return 0;
 }
