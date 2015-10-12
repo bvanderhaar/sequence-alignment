@@ -12,12 +12,17 @@ using namespace std;
 #define GAP_PENALTY 2
 #define MISMATCH_PENALTY 1
 
+struct score {
+  int score;
+  bool processed;
+};
+
 struct process_matrix {
-  int *i;
-  int *j;
+  int i;
+  int j;
   string *seq_a;
   string *seq_b;
-  vector<vector<int>> *H_matrix;
+  vector<vector<struct score>> *H_matrix;
 };
 
 int similarity_score(char a, char b) {
@@ -30,14 +35,16 @@ int similarity_score(char a, char b) {
   return score;
 }
 
-int max_score(int scores[]) {
-  int score = 0;
+struct score max_score(int scores[]) {
+  struct score s;
+  s.score = 0;
   for (int i = 0; i < 3; i++) {
-    if (scores[i] > score) {
-      score = scores[i];
+    if (scores[i] > s.score) {
+      s.score = scores[i];
     }
   }
-  return score;
+  s.processed = true;
+  return s;
 }
 
 string slurp(const string &filename) {
@@ -52,16 +59,23 @@ void *process_matrix_thread(void *threadarg) {
   struct process_matrix *matrix;
   matrix = (struct process_matrix *)threadarg;
   int max_options[3];
-  vector<vector<int>> H_matrix = *(matrix->H_matrix);
+  vector<vector<struct score>> H_matrix = *(matrix->H_matrix);
   string seq_a = *(matrix->seq_a);
   string seq_b = *(matrix->seq_b);
-  max_options[0] =
-      H_matrix[*(matrix->i) - 1][*(matrix->j) - 1] +
-      similarity_score(seq_a.at(*(matrix->i) - 1), seq_b.at(*(matrix->j) - 1));
-  max_options[1] = H_matrix[*(matrix->i) - 1][*(matrix->j)] - GAP_PENALTY;
-  max_options[2] = H_matrix[*(matrix->i)][*(matrix->j) - 1] - GAP_PENALTY;
-  (*matrix->H_matrix)[*(matrix->i)][*(matrix->j)] = max_score(max_options);
-  return 0;
+  if (H_matrix[matrix->i][matrix->j].processed) {
+    pthread_exit(NULL);
+  }
+  if (H_matrix[matrix->i - 1][matrix->j - 1].processed &&
+      H_matrix[matrix->i - 1][matrix->j].processed &&
+      H_matrix[matrix->i][matrix->j - 1].processed) {
+    max_options[0] =
+        H_matrix[matrix->i - 1][matrix->j - 1].score +
+        similarity_score(seq_a.at(matrix->i - 1), seq_b.at(matrix->j - 1));
+    max_options[1] = H_matrix[matrix->i - 1][matrix->j].score - GAP_PENALTY;
+    max_options[2] = H_matrix[matrix->i][matrix->j - 1].score - GAP_PENALTY;
+    (*matrix->H_matrix)[matrix->i][matrix->j] = max_score(max_options);
+  }
+  pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[]) {
@@ -93,29 +107,61 @@ int main(int argc, char *argv[]) {
   // create the matrices
   size_t length_m = seq_a.size();
   size_t length_n = seq_b.size();
-  // cout << "length m " << length_m << endl;
-  // cout << "length n " << length_n << endl;
-  vector<vector<int>> H_matrix;
-  H_matrix.resize(length_m, std::vector<int>(length_n, 0));
+  struct score unprocessed_score;
+  unprocessed_score.score = 0;
+  unprocessed_score.processed = false;
+  vector<vector<struct score>> H_matrix;
+  H_matrix.resize(length_m,
+                  std::vector<struct score>(length_n, unprocessed_score));
 
+  struct score s;
+  s.score = 0;
+  s.processed = true;
   // set first row and first column to zero
   for (int i = 0; i < length_m; i++) {
-    H_matrix[0][i] = 0;
+    H_matrix[0][i] = s;
   }
   for (int j = 0; j < length_n; j++) {
-    H_matrix[j][0] = 0;
+    H_matrix[j][0] = s;
   }
 
-  struct process_matrix pm;
   clock_t begin_matrix_calc = clock();
-  for (int i = 1; i < length_m; i++) {
+  struct process_matrix pm;
+  pm.i = 1;
+  pm.j = 1;
+  pm.seq_a = &seq_a;
+  pm.seq_b = &seq_b;
+  pm.H_matrix = &H_matrix;
+  process_matrix_thread((void *)&pm);
+  struct process_matrix pm1;
+  struct process_matrix pm2;
+  pthread_t threads[length_m * length_n];
+  for (int i = 2; i < length_m; i++) {
     for (int j = 1; j < length_n; j++) {
-      pm.i = &i;
-      pm.j = &j;
+      pm1.i = i;
+      pm1.j = j;
+      pm1.seq_a = &seq_a;
+      pm1.seq_b = &seq_b;
+      pm1.H_matrix = &H_matrix;
+
+      pm2.i = j;
+      pm2.j = i;
+      pm2.seq_a = &seq_a;
+      pm2.seq_b = &seq_b;
+      pm2.H_matrix = &H_matrix;
+
+      pm.i = i + 1;
+      pm.j = j;
       pm.seq_a = &seq_a;
       pm.seq_b = &seq_b;
       pm.H_matrix = &H_matrix;
-      process_matrix_thread((void *)&pm);
+
+      pthread_create(&threads[(j * i) + 0], NULL, process_matrix_thread,
+                     (void *)&pm1);
+      pthread_create(&threads[(j * i) + 1], NULL, process_matrix_thread,
+                     (void *)&pm2);
+      pthread_create(&threads[(j * i) + 2], NULL, process_matrix_thread,
+                     (void *)&pm);
     }
   }
   clock_t end_matrix_calc = clock();
@@ -124,7 +170,7 @@ int main(int argc, char *argv[]) {
 
   for (int i = 0; i < length_m; i++) {
     for (int j = 0; j < length_n; j++) {
-      cout << H_matrix[i][j] << ' ';
+      cout << H_matrix[i][j].score << ' ';
     }
     cout << endl;
   }
