@@ -10,7 +10,7 @@ An implementation of the Smith Waterman algorithm in C++, with pthreads.
 - At what level do you split up the matrices?
 
 - I figured I could start threads on equal parts of the diagonal line.  Some processes would be wasted, but probably still end up with a speed up in the end; with minimal extra memory usage.  The "start spots" would be equally placed along the diagonal.
-
+![diagram](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/matrix-processing.png)
 - I also thought optimizing for the "squares" in the matrix - i.e. the longer string would be broken up into smaller pieces.  But my challenge was patching the matrices back together seemed too complex
 
 ## Speedup Examples
