@@ -8,15 +8,22 @@ using namespace std;
 
 int similarity_score(char a, char b) {
   int score;
-  if (a == b) {
-    score = 1;
+  if ((a == b) || (a == '?' || b == '?')) {
+    score = 2;
   } else {
     score = -1;
   }
+  return score;
 }
 
-int max_score(int[] array) {
-
+int max_score(int scores[]) {
+  int score = 0;
+  for (int i = 0; i < 3; i++) {
+    if (scores[i] > score) {
+      score = scores[i];
+    }
+  }
+  return score;
 }
 
 string slurp(const string &filename) {
@@ -29,10 +36,9 @@ string slurp(const string &filename) {
 
 int main(int argc, char *argv[]) {
   int c;
-  bool fexists = false;
   bool showtime = false;
-  string file1 = argv[0];
-  string file2 = argv[1];
+  string file1 = argv[1];
+  string file2 = argv[2];
   if (argc > 1) {
     for (c = 1; c < argc; c++) {
       if (strcmp(argv[c], "-t") == 0) {
@@ -41,10 +47,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (fexists == false) {
+  if (argc < 3) {
     cout << "Usage: sequence-alignment filename_sequence_a filename_sequence_b "
             "[-t]";
+    return 0;
   }
+  cout << "Starting alignment with files: " << file1 << ", " << file2 << endl;
 
   clock_t begin_read = clock();
   string seq_a = slurp(file1);
@@ -55,27 +63,35 @@ int main(int argc, char *argv[]) {
   // create the matrices
   size_t length_m = seq_a.size();
   size_t length_n = seq_b.size();
+  cout << "length m " << length_m << endl;
+  cout << "length n " << length_n << endl;
   int H_matrix[length_m + 1][length_n + 1];
 
   // set first row and first column to zero
-  for (int i = 0; i > length_m + 1; i++) {
-    H_matrix[0,i] = 0;
+  for (int i = 0; i < length_m + 1; i++) {
+    H_matrix[0][i] = 0;
   }
-  for (int j = 0, j > length_n + 1, j++) {
-    H_matrix[j,0] = 0;
+  for (int j = 0; j < length_n + 1; j++) {
+    H_matrix[j][0] = 0;
   }
 
-  for (int i = 0; i > length_m + 1; i++) {
-    for (int j = 0, j > length_n + 1, j++) {
-      temp[0] = H[i-1][j-1]+similarity_score(seq_a[i-1],seq_b[j-1]);
-      temp[1] = H[i-1][j]-delta;
-      temp[2] = H[i][j-1]-delta;
-      temp[3] = 0.;
-      H[i][j] = find_array_max(temp,4);
-
-
-      }
+  int max_options[3];
+  for (int i = 1; i < length_m + 1; i++) {
+    for (int j = 1; j < length_n + 1; j++) {
+      max_options[0] = H_matrix[i - 1][j - 1] +
+                       similarity_score(seq_a.at(i - 1), seq_b.at(j - 1));
+      max_options[1] = H_matrix[i - 1][j] - 2;
+      max_options[2] = H_matrix[i][j - 1] - 2;
+      H_matrix[i][j] = max_score(max_options);
     }
+  }
+
+  for (int i = 0; i < length_m + 1; i++) {
+    for (int j = 0; j < length_n + 1; j++) {
+      cout << H_matrix[i][j] << ' ';
+    }
+    cout << endl;
+  }
 
   return 0;
 }
