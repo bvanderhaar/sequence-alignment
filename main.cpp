@@ -5,7 +5,6 @@
 #include <string>
 #include <pthread.h>
 #include <vector>
-
 using namespace std;
 
 #define MATCH 1
@@ -63,7 +62,8 @@ void *process_matrix_thread(void *threadarg) {
   string seq_a = *(matrix->seq_a);
   string seq_b = *(matrix->seq_b);
   if (H_matrix[matrix->i][matrix->j].processed) {
-    pthread_exit(NULL);
+    // pthread_exit(NULL);
+    return 0;
   }
   if (H_matrix[matrix->i - 1][matrix->j - 1].processed &&
       H_matrix[matrix->i - 1][matrix->j].processed &&
@@ -75,7 +75,8 @@ void *process_matrix_thread(void *threadarg) {
     max_options[2] = H_matrix[matrix->i][matrix->j - 1].score - GAP_PENALTY;
     (*matrix->H_matrix)[matrix->i][matrix->j] = max_score(max_options);
   }
-  pthread_exit(NULL);
+  // pthread_exit(NULL);
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -135,10 +136,11 @@ int main(int argc, char *argv[]) {
   process_matrix_thread((void *)&pm);
   struct process_matrix pm1;
   struct process_matrix pm2;
-  pthread_t threads[length_m * length_n];
-  for (int i = 2; i < length_m; i++) {
+  int thread_size = length_m * length_n;
+  pthread_t threads[thread_size];
+  for (int i = 1; i < length_m; i++) {
     for (int j = 1; j < length_n; j++) {
-      pm1.i = i;
+      /*pm1.i = i;
       pm1.j = j;
       pm1.seq_a = &seq_a;
       pm1.seq_b = &seq_b;
@@ -148,20 +150,19 @@ int main(int argc, char *argv[]) {
       pm2.j = i;
       pm2.seq_a = &seq_a;
       pm2.seq_b = &seq_b;
-      pm2.H_matrix = &H_matrix;
+      pm2.H_matrix = &H_matrix;*/
 
-      pm.i = i + 1;
+      pm.i = i;
       pm.j = j;
       pm.seq_a = &seq_a;
       pm.seq_b = &seq_b;
       pm.H_matrix = &H_matrix;
 
-      pthread_create(&threads[(j * i) + 0], NULL, process_matrix_thread,
+      /*pthread_create(&threads[(j * i) + 0], NULL, process_matrix_thread,
                      (void *)&pm1);
       pthread_create(&threads[(j * i) + 1], NULL, process_matrix_thread,
-                     (void *)&pm2);
-      pthread_create(&threads[(j * i) + 2], NULL, process_matrix_thread,
-                     (void *)&pm);
+                     (void *)&pm2);*/
+      process_matrix_thread((void *)&pm);
     }
   }
   clock_t end_matrix_calc = clock();
