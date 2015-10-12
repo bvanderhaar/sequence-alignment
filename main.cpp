@@ -60,9 +60,7 @@ void *process_matrix_thread(void *threadarg) {
       similarity_score(seq_a.at(*(matrix->i) - 1), seq_b.at(*(matrix->j) - 1));
   max_options[1] = H_matrix[*(matrix->i) - 1][*(matrix->j)] - GAP_PENALTY;
   max_options[2] = H_matrix[*(matrix->i)][*(matrix->j) - 1] - GAP_PENALTY;
-  H_matrix[*(matrix->i)][*(matrix->j)] = max_score(max_options);
-  // this is inefficient and should be fixed
-  (*matrix->H_matrix) = H_matrix;
+  (*matrix->H_matrix)[*(matrix->i)][*(matrix->j)] = max_score(max_options);
   return 0;
 }
 
