@@ -4,12 +4,21 @@
 #include <iostream>
 #include <string>
 #include <pthread.h>
+#include <vector>
 
 using namespace std;
 
 #define MATCH 1
 #define GAP_PENALTY 2
 #define MISMATCH_PENALTY 1
+
+struct process_matrix {
+  int *i;
+  int *j;
+  string *seq_a;
+  string *seq_b;
+  vector<vector<int>> *H_matrix;
+};
 
 int similarity_score(char a, char b) {
   int score;
@@ -37,6 +46,24 @@ string slurp(const string &filename) {
   sstr << in.rdbuf();
   string file = sstr.str();
   return file;
+}
+
+void *process_matrix_thread(void *threadarg) {
+  struct process_matrix *matrix;
+  matrix = (struct process_matrix *)threadarg;
+  int max_options[3];
+  vector<vector<int>> H_matrix = *(matrix->H_matrix);
+  string seq_a = *(matrix->seq_a);
+  string seq_b = *(matrix->seq_b);
+  max_options[0] =
+      H_matrix[*(matrix->i) - 1][*(matrix->j) - 1] +
+      similarity_score(seq_a.at(*(matrix->i) - 1), seq_b.at(*(matrix->j) - 1));
+  max_options[1] = H_matrix[*(matrix->i) - 1][*(matrix->j)] - GAP_PENALTY;
+  max_options[2] = H_matrix[*(matrix->i)][*(matrix->j) - 1] - GAP_PENALTY;
+  H_matrix[*(matrix->i)][*(matrix->j)] = max_score(max_options);
+  //this is inefficient and should be fixed
+  (*matrix->H_matrix) = H_matrix;
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -70,7 +97,8 @@ int main(int argc, char *argv[]) {
   size_t length_n = seq_b.size();
   // cout << "length m " << length_m << endl;
   // cout << "length n " << length_n << endl;
-  int H_matrix[length_m][length_n];
+  vector<vector<int>> H_matrix;
+  H_matrix.resize(length_m, std::vector<int>(length_n, 0));
 
   // set first row and first column to zero
   for (int i = 0; i < length_m; i++) {
@@ -80,15 +108,16 @@ int main(int argc, char *argv[]) {
     H_matrix[j][0] = 0;
   }
 
-  int max_options[3];
+  struct process_matrix pm;
   clock_t begin_matrix_calc = clock();
   for (int i = 1; i < length_m; i++) {
     for (int j = 1; j < length_n; j++) {
-      max_options[0] = H_matrix[i - 1][j - 1] +
-                       similarity_score(seq_a.at(i - 1), seq_b.at(j - 1));
-      max_options[1] = H_matrix[i - 1][j] - GAP_PENALTY;
-      max_options[2] = H_matrix[i][j - 1] - GAP_PENALTY;
-      H_matrix[i][j] = max_score(max_options);
+      pm.i = &i;
+      pm.j = &j;
+      pm.seq_a = &seq_a;
+      pm.seq_b = &seq_b;
+      pm.H_matrix = &H_matrix;
+      process_matrix_thread((void *)&pm);
     }
   }
   clock_t end_matrix_calc = clock();
@@ -101,7 +130,7 @@ int main(int argc, char *argv[]) {
     }
     cout << endl;
   }
-  
+
   cout << "Elapsed Calculation Time: " << elapsed_secs_matrix_calc << endl;
   return 0;
 }
