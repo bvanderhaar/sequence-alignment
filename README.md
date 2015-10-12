@@ -2,7 +2,7 @@
 An implementation of the Smith Waterman algorithm in C++, with pthreads.
 
 ## Pointer Hell
-- It was a pain to get the pointer logic down with the struct. As you can see my pthread method is very difficult to read. [Code Example](https://github.com/bvanderhaar/sequence-alignment/blob/master/main.cpp#L51)
+- It was a pain to get the pointer logic down with the struct. As you can see my pthread method is very difficult to read. [Code Example](https://github.com/bvanderhaar/sequence-alignment/blob/master/main.cpp#L57)
 - In addition, the pointer to my matrix could only be copied.  I couldn't figure out how to make thread-safe modifications to my final matrix.  I used std::vector.  This is not thread safe.
 
 ## The right optimization
