@@ -48,7 +48,7 @@ string slurp(const string &filename) {
   return file;
 }
 
-void *process_matrix_thread(void *threadarg) {
+void *process_known_row(void *threadarg) {
   struct process_matrix *matrix;
   matrix = (struct process_matrix *)threadarg;
   int max_options[3];
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  cout << "Elapsed Calculation Time: " << elapsed_msecs_matrix_calc << "ms"
+  cout << "Elapsed Calculation Time: " << elapsed_msecs_matrix_calc << " ms"
        << endl;
   return 0;
 }
