@@ -7,21 +7,17 @@
 #include <vector>
 using namespace std;
 
-#define MATCH 1
-#define GAP_PENALTY 2
-#define MISMATCH_PENALTY 1
+const int MATCH = 1;
+const int GAP_PENALTY = 2;
+const int MISMATCH_PENALTY = 1;
 
-struct score {
-  int score;
-  bool processed;
-};
+string GKnownSequence;
+string GSearchSequence;
+vector<vector<int>> GMatrix;
 
 struct process_matrix {
-  int i;
-  int j;
-  string *seq_a;
-  string *seq_b;
-  vector<vector<struct score>> *H_matrix;
+  int known_sequence_slot;
+  int search_sequence_slot;
 };
 
 int similarity_score(char a, char b) {
@@ -34,16 +30,14 @@ int similarity_score(char a, char b) {
   return score;
 }
 
-struct score max_score(int scores[]) {
-  struct score s;
-  s.score = 0;
+int max_score(int scores[3]) {
+  int score = 0;
   for (int i = 0; i < 3; i++) {
-    if (scores[i] > s.score) {
-      s.score = scores[i];
+    if (scores[i] > score) {
+      score = scores[i];
     }
   }
-  s.processed = true;
-  return s;
+  return score;
 }
 
 string slurp(const string &filename) {
@@ -58,124 +52,97 @@ void *process_matrix_thread(void *threadarg) {
   struct process_matrix *matrix;
   matrix = (struct process_matrix *)threadarg;
   int max_options[3];
-  vector<vector<struct score>> H_matrix = *(matrix->H_matrix);
-  string seq_a = *(matrix->seq_a);
-  string seq_b = *(matrix->seq_b);
-  if (H_matrix[matrix->i][matrix->j].processed) {
-    // pthread_exit(NULL);
-    return 0;
-  }
-  if (H_matrix[matrix->i - 1][matrix->j - 1].processed &&
-      H_matrix[matrix->i - 1][matrix->j].processed &&
-      H_matrix[matrix->i][matrix->j - 1].processed) {
+  if (GMatrix[matrix->search_sequence_slot - 1][matrix->known_sequence_slot] !=
+      -1) {
     max_options[0] =
-        H_matrix[matrix->i - 1][matrix->j - 1].score +
-        similarity_score(seq_a.at(matrix->i - 1), seq_b.at(matrix->j - 1));
-    max_options[1] = H_matrix[matrix->i - 1][matrix->j].score - GAP_PENALTY;
-    max_options[2] = H_matrix[matrix->i][matrix->j - 1].score - GAP_PENALTY;
-    (*matrix->H_matrix)[matrix->i][matrix->j] = max_score(max_options);
+        GMatrix[matrix->search_sequence_slot - 1][matrix->known_sequence_slot -
+                                                  1] +
+        similarity_score(GKnownSequence.at(matrix->known_sequence_slot - 1),
+                         GSearchSequence.at(matrix->search_sequence_slot - 1));
+    max_options[1] = GMatrix[(matrix->search_sequence_slot) -
+                             1][(matrix->known_sequence_slot)] -
+                     GAP_PENALTY;
+    max_options[2] =
+        GMatrix[matrix->search_sequence_slot][matrix->known_sequence_slot - 1] -
+        GAP_PENALTY;
+    GMatrix[matrix->search_sequence_slot][matrix->known_sequence_slot] =
+        max_score(max_options);
   }
-  // pthread_exit(NULL);
   return 0;
 }
 
 int main(int argc, char *argv[]) {
   int c;
   bool showtime = false;
-  string file1 = argv[1];
-  string file2 = argv[2];
+  bool showmatrix = false;
+  string filename_known_sequence = argv[1];
+  string filename_search_sequence = argv[2];
   if (argc > 1) {
     for (c = 1; c < argc; c++) {
       if (strcmp(argv[c], "-t") == 0) {
         showtime = true;
       }
+      if (strcmp(argv[c], "-p") == 0) {
+        showmatrix = true;
+      }
     }
   }
 
   if (argc < 3) {
-    cout << "Usage: sequence-alignment filename_sequence_a filename_sequence_b "
+    cout << "Usage: sequence-alignment filename_known_sequence "
+            "filename_search_sequence "
             "[-t]";
     return 0;
   }
-  cout << "Starting alignment with files: " << file1 << ", " << file2 << endl;
+  cout << "Starting alignment with known sequence: " << filename_known_sequence
+       << endl;
+  cout << "Starting alignment with search sequence " << filename_search_sequence
+       << endl;
 
   clock_t begin_read = clock();
-  string seq_a = slurp(file1);
-  string seq_b = slurp(file2);
+  GKnownSequence = slurp(filename_known_sequence);
+  GSearchSequence = slurp(filename_search_sequence);
   clock_t end_read = clock();
   double elapsed_secs_read = double(end_read - begin_read) / CLOCKS_PER_SEC;
 
   // create the matrices
-  size_t length_m = seq_a.size();
-  size_t length_n = seq_b.size();
-  struct score unprocessed_score;
-  unprocessed_score.score = 0;
-  unprocessed_score.processed = false;
-  vector<vector<struct score>> H_matrix;
-  H_matrix.resize(length_m,
-                  std::vector<struct score>(length_n, unprocessed_score));
+  size_t known_sequence_size = GKnownSequence.size();
+  size_t search_sequence_size = GSearchSequence.size();
+  GMatrix.resize(search_sequence_size,
+                 std::vector<int>(known_sequence_size, -1));
 
-  struct score s;
-  s.score = 0;
-  s.processed = true;
-  // set first row and first column to zero
-  for (int i = 0; i < length_m; i++) {
-    H_matrix[0][i] = s;
+  // set first row to zero
+  for (int i = 0; i < known_sequence_size; i++) {
+    GMatrix[0][i] = 0;
   }
-  for (int j = 0; j < length_n; j++) {
-    H_matrix[j][0] = s;
+  // set first column to zero
+  for (int j = 0; j < search_sequence_size; j++) {
+    GMatrix[j][0] = 0;
   }
 
   clock_t begin_matrix_calc = clock();
   struct process_matrix pm;
-  pm.i = 1;
-  pm.j = 1;
-  pm.seq_a = &seq_a;
-  pm.seq_b = &seq_b;
-  pm.H_matrix = &H_matrix;
-  process_matrix_thread((void *)&pm);
-  struct process_matrix pm1;
-  struct process_matrix pm2;
-  int thread_size = length_m * length_n;
-  pthread_t threads[thread_size];
-  for (int i = 1; i < length_m; i++) {
-    for (int j = 1; j < length_n; j++) {
-      /*pm1.i = i;
-      pm1.j = j;
-      pm1.seq_a = &seq_a;
-      pm1.seq_b = &seq_b;
-      pm1.H_matrix = &H_matrix;
-
-      pm2.i = j;
-      pm2.j = i;
-      pm2.seq_a = &seq_a;
-      pm2.seq_b = &seq_b;
-      pm2.H_matrix = &H_matrix;*/
-
-      pm.i = i;
-      pm.j = j;
-      pm.seq_a = &seq_a;
-      pm.seq_b = &seq_b;
-      pm.H_matrix = &H_matrix;
-
-      /*pthread_create(&threads[(j * i) + 0], NULL, process_matrix_thread,
-                     (void *)&pm1);
-      pthread_create(&threads[(j * i) + 1], NULL, process_matrix_thread,
-                     (void *)&pm2);*/
+  for (int i = 1; i < search_sequence_size; i++) {
+    for (int j = 1; j < known_sequence_size; j++) {
+      pm.known_sequence_slot = j;
+      pm.search_sequence_slot = i;
       process_matrix_thread((void *)&pm);
     }
   }
   clock_t end_matrix_calc = clock();
-  double elapsed_secs_matrix_calc =
-      double(end_matrix_calc - begin_matrix_calc) / CLOCKS_PER_SEC;
+  double elapsed_msecs_matrix_calc =
+      double(end_matrix_calc - begin_matrix_calc) / (CLOCKS_PER_SEC / 1000);
 
-  for (int i = 0; i < length_m; i++) {
-    for (int j = 0; j < length_n; j++) {
-      cout << H_matrix[i][j].score << ' ';
+  if (showmatrix) {
+    for (int i = 0; i < search_sequence_size; i++) {
+      for (int j = 0; j < known_sequence_size; j++) {
+        cout << GMatrix[i][j] << ' ';
+      }
+      cout << endl;
     }
-    cout << endl;
   }
 
-  cout << "Elapsed Calculation Time: " << elapsed_secs_matrix_calc << endl;
+  cout << "Elapsed Calculation Time: " << elapsed_msecs_matrix_calc << "ms"
+       << endl;
   return 0;
 }

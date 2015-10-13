@@ -17,6 +17,6 @@ Using a flat, single-threaded algorithm, my results were:
 - Mid 2012 15" MBP
 - 2.3GHz Core i7
 - 8GB RAM
-- 11 minutes
+- 11 minutes (673 Seconds)
 
 I'm hypothesising that a parallel version will at least see a 2x speedup based on the parallel ability of the problem and the overhead of keeping track of threads.
