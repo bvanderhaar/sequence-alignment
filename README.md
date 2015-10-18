@@ -1,22 +1,24 @@
 # sequence-alignment
-An implementation of the Smith Waterman algorithm in C++, with pthreads.
+An implementation of the Smith Waterman algorithm in C++, with C++11 threads.
 
-## Pointer Hell
-- It was a pain to get the pointer logic down with the struct. As you can see my pthread method is very difficult to read. [Code Example](https://github.com/bvanderhaar/sequence-alignment/blob/master/main.cpp#L57)
-- Now I'm getting a segmentation fault when running my code over the vector<vector<int>>.  I think I need a mutex to control writes to this object
+## Abstract
+A single-threaded and multi-threaded version of the program was tested and compared.  Results indicate limited speedup on modern hardware using threads.
 
-## The right optimization
-- At what level do you split up the matrices?
+## High Level Design
+- The single threaded version goes row-by-row through the matrix and calculates the score.
+- Insert image
+- The multi-threaded version dispatches threads on each row to process until the last row.  If one thread gets ahead of the other it waits until the "top" thread fulfills the bottom threads dependency
+- Insert Image
+
+## Implementation
+- C++14 standard library with Clang++/LLVM was chosen due to availability of Mac OS.  C++11 threads were used in the threaded version due to the more simple implementation.  
+- The program accepted arguments for number of threads.  If the argument for threads is equal to one, none of the C++ threading API was called.  If the number of threads was 2 or more, the known sequence (smaller) was split up between the available threads, going in order from top to bottom.
+- Level 2 optimizations were enabled for compilation.
 - I figured I could start threads on equal parts of the diagonal line.  Some processes would be wasted, but probably still end up with a speed up in the end; with minimal extra memory usage.  The "start spots" would be equally placed along the diagonal.
 ![diagram](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/matrix-processing.png)
-- I also thought optimizing for the "squares" in the matrix - i.e. the longer string would be broken up into smaller pieces.  But my challenge was patching the matrices back together seemed too complex
-- For starters, I tried three static threads, feeding them look-ahead numbers in the same for loop as the static
 
-## Speedup Examples
-Using a flat, single-threaded algorithm, my results were:
-- Mid 2012 15" MBP
-- 2.3GHz Core i7
-- 8GB RAM
-- 11 minutes (673 Seconds)
+## Testing conditions
+A single Macbook Pro, Early 2015 with a 2.7GHz Core i5 processor with 8GB of DDR3 RAM was used for testing.  Each test was run for 4 iterations to ensure consistent test results.  The program was run with threads between 1-10, 12 and 16 threads and compared.  The clock API of C++ was used to record only the processing time of both the threaded and non-threaded code execution.  The time for initialization and file reading was ignored in all cases.  
 
-I'm hypothesising that a parallel version will at least see a 2x speedup based on the parallel ability of the problem and the overhead of keeping track of threads.
+## Discussion
+In every case, the symmetrical / single-threaded version of the application ran faster than the parallelized version on the MacBook Pro.  

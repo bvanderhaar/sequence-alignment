@@ -7,8 +7,8 @@
 #include <vector>
 using namespace std;
 
-const int MATCH = 2;
-const int GAP_PENALTY = 1;
+const int MATCH = 1;
+const int GAP_PENALTY = 2;
 const int MISMATCH_PENALTY = 1;
 
 string GKnownSequence;
