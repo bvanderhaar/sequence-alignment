@@ -1,8 +1,5 @@
-# sequence-alignment
-An implementation of the Smith Waterman algorithm in C++, with C++11 threads.
-
 ## Abstract
-A single-threaded and multi-threaded version of the program was tested and compared.  Results indicate limited speedup on modern hardware using threads.
+A single-threaded and multi-threaded version of a C++ implementation of the Smith-Waterman algorithm was tested and compared.  Results indicate limited speedup on modern hardware using threads using a single sample file.
 
 ## High Level Design
 The single threaded version goes row-by-row through the matrix and calculates the score.
@@ -27,7 +24,7 @@ Of the parallelized test runs, two threads performed the best on all hardware.  
 Graphing the run times of the best threaded/parallel run next to the symmetrical.
 ![Threaded non threaded compare](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/threaded-non-threaded-compare.png)
 
-In every case, the symmetrical / single-threaded version of the application ran faster than the parallelized version on the MacBook Pro.  This suggests that the overhead of the threads and splitting up the work takes more time than just running through the program one time.  Another suggestion is that under the hood, the compiler is doing some optimizations that reduces processing time in the single threaded case.
+In every case, the symmetrical / single-threaded version of the application ran faster than the parallelized version.  This suggests that the overhead of the threads and splitting up the work takes more time than just running through the program one time.  Another suggestion is that under the hood, the compiler is doing some optimizations that reduces processing time in the single threaded case.
 
 ## Conclusion
 Dynamic programming can be valuable for speeding up execution time for even complex problems with dependencies.  In this academic case, it didn't result in a speed-up; but was very close to single-threaded execution.  With an increase in data, this speedup difference could become profound.
