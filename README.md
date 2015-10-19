@@ -3,9 +3,9 @@ A single-threaded and multi-threaded version of a C++ implementation of the Smit
 
 ## High Level Design
 The single threaded version goes row-by-row through the matrix and calculates the score.
-![Single Threaded Processing](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/matrix-processing-single-threaded.png)
+![Single Threaded Processing](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/sequental-matrix-processing.png)
 The multi-threaded version dispatches threads on each row to process until the last row.  If one thread gets ahead of the other it waits until the top thread fulfills the bottom threads dependency
-![Multiple Threaded Processing](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/matrix-processing-parallel-threaded.png)
+![Multiple Threaded Processing](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/parallel-matrix-processing.png)
 
 ## Implementation
 C++14 standard library with Clang++/LLVM 3.7.0 was chosen due to availability of Mac OS.  C++11 threads were used in the threaded version due to the more simple implementation compared to pthreads.  The program accepted arguments for number of threads.  If the argument for threads is equal to one, none of the C++ threading API was called.  If the number of threads was 2 or more, the known sequence (smaller) was split up between the available threads, going in order from top to bottom.  Level 2 optimizations were enabled for compilation due to anecdotal evidence resulting in reduced processing time.
@@ -27,4 +27,4 @@ Graphing the run times of the best threaded/parallel run next to the symmetrical
 In every case, the symmetrical / single-threaded version of the application ran faster than the parallelized version.  This suggests that the overhead of the threads and splitting up the work takes more time than just running through the program one time.  Another suggestion is that under the hood, the compiler is doing some optimizations that reduces processing time in the single threaded case.
 
 ## Conclusion
-Dynamic programming can be valuable for speeding up execution time for even complex problems with dependencies.  In this academic case, it didn't result in a speed-up; but was very close to single-threaded execution.  With an increase in data, this speedup difference could become profound.
+Dynamic programming can be valuable for speeding up execution time for even complex problems with dependencies.  In this example case, it didn't result in a speed-up; but was very close to single-threaded execution.  With an increase in data, this speedup difference could become profound.
