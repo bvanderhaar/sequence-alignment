@@ -22,6 +22,7 @@ Of the parallelized test runs, two threads performed the best on all hardware.  
 ![Two threads execution time](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/two-threads-execution-time.png)
 
 Graphing the run times of the best threaded/parallel run next to the symmetrical.
+
 ![Threaded non threaded compare](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/threaded-non-threaded-compare.png)
 
 In every case, the symmetrical / single-threaded version of the application ran faster than the parallelized version.  This suggests that the overhead of the threads and splitting up the work takes more time than just running through the program one time.  Another suggestion is that under the hood, the compiler is doing some optimizations that reduces processing time in the single threaded case.
