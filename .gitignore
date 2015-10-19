@@ -31,3 +31,6 @@ sequence-alignment
 # Sample Input files
 HIV-1_db.fasta.txt
 HIV-1_Polymerase.txt
+
+# Ignore Mac OS files
+.DS_Store
