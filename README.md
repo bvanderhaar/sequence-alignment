@@ -6,7 +6,7 @@ The single threaded version goes row-by-row through the matrix and calculates th
 
 ![Single Threaded Processing](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/sequential-matrix-processing.png)
 
-The multi-threaded version dispatches threads on each row to process until the last row.  If one thread gets ahead of the other it waits until the top thread fulfills the bottom threads dependency
+The multi-threaded version dispatches threads on each row to process until the last row.  As soon as a thread is finished processing, it moves on to the next row.  If one thread gets ahead of the other it waits until the top thread fulfills the bottom threads dependency.  
 
 ![Multiple Threaded Processing](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/parallel-matrix-processing.png)
 
