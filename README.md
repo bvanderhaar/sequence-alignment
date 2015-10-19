@@ -20,10 +20,13 @@ A Macbook Pro, Early 2015 with a 2.7GHz Core i5 processor with 8GB of DDR3 RAM w
 ## Discussion
 Here is the raw data of the test runs.
 ![Raw Data](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/raw-data.png)
+
 Of the parallelized test runs, two threads performed the best on all hardware.  These runs graphed:
 ![Two threads execution time](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/two-threads-execution-time.png)
+
 Graphing the run times of the best threaded/parallel run next to the symmetrical.
 ![Threaded non threaded compare](https://raw.githubusercontent.com/bvanderhaar/sequence-alignment/master/docs/threaded-non-threaded-compare.png)
+
 In every case, the symmetrical / single-threaded version of the application ran faster than the parallelized version on the MacBook Pro.  This suggests that the overhead of the threads and splitting up the work takes more time than just running through the program one time.  Another suggestion is that under the hood, the compiler is doing some optimizations that reduces processing time in the single threaded case.
 
 ## Conclusion
